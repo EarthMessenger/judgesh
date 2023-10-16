@@ -2,7 +2,7 @@
 
 print_usage_and_exit()
 {
-  echo "Usage: $0 [-t <second>] <program>"
+  echo "Usage: $(basename $0) [-t <second>] <program>"
   exit 1
 }
 
