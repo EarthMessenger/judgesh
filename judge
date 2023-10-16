@@ -1,0 +1,67 @@
+#!/usr/bin/sh
+
+print_usage_and_exit()
+{
+  echo "Usage: $0 [-t <second>] <program>"
+  exit 1
+}
+
+time_limit=1
+
+while getopts "t:h" opt
+do
+  case $opt in
+    t)
+      time_limit=$OPTARG
+      ;;
+    h)
+      print_usage_and_exit
+      ;;
+  esac
+done
+
+program=${@:$OPTIND:1}
+
+[ ! $program ] && print_usage_and_exit 
+
+tmp_file=$(mktemp)
+
+clean() 
+{
+  rm -f "$tmp_file"
+  tput sgr0
+}
+
+trap clean EXIT
+
+testcases=$(ls ${program}*.in | sed "s/.in$//")
+total_cnt=$(echo $testcases | wc -w)
+cnt=0
+
+for t in $testcases
+do
+  input_file="${t}.in"
+  answer_file="${t}.ans"
+  time=$( TIMEFORMAT="%R"; { time ( timeout $time_limit ./$program < $input_file > $tmp_file ) } 2>&1 )
+  ret=$?
+  cnt=$((cnt+1))
+  echo -n "[$cnt/$total_cnt] testing $input_file and $answer_file (${time}s): "
+  if [ $ret -eq 124 ] && [ $(echo "$time > $time_limit" | bc) -eq 1 ]
+  then
+    echo "$(tput setaf 3)TLE$(tput sgr0)"
+    continue
+  fi
+  if [ $ret -ne 0 ]
+  then
+    echo "$(tput setaf 5)RE$(tput sgr0)"
+    continue
+  fi
+  diff -Z $answer_file $tmp_file > /dev/null
+  if [ $? -ne 0 ]
+  then
+    echo "$(tput setaf 1)WA$(tput sgr0)"
+    continue
+  fi
+
+  echo "$(tput setaf 2)AC$(tput sgr0)"
+done
