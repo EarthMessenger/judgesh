@@ -8,13 +8,16 @@ print_usage_and_exit()
 
 time_limit=1
 
-while getopts "t:h" opt
+while getopts "t:" opt
 do
   case $opt in
     t)
       time_limit=$OPTARG
       ;;
-    h)
+    ?)
+      print_usage_and_exit
+      ;;
+    :)
       print_usage_and_exit
       ;;
   esac
@@ -52,7 +55,7 @@ do
   time=$( TIMEFORMAT="%R"; { time ( timeout $time_limit ./$program < $input_file > $tmp_file ) } 2>&1 )
   ret=$?
   echo -n "(${time}s) "
-  if [[ $ret == 124 ]] && [[ $ret > $time_limit ]]
+  if [[ $ret == 124 ]] && [[ $time > $time_limit ]]
   then
     echo ": $(tput setaf 3)TLE$(tput sgr0)"
     continue
