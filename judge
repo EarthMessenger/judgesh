@@ -42,26 +42,32 @@ for t in $testcases
 do
   input_file="${t}.in"
   answer_file="${t}.ans"
+  cnt=$((cnt+1))
+  echo -n "[$cnt/$total_cnt] testing $input_file and $answer_file "
+  if [[ ! -f $answer_file ]]
+  then
+    echo ": $(tput setaf 7)answer file not found, skipped$(tput sgr0)"
+    continue
+  fi
   time=$( TIMEFORMAT="%R"; { time ( timeout $time_limit ./$program < $input_file > $tmp_file ) } 2>&1 )
   ret=$?
-  cnt=$((cnt+1))
-  echo -n "[$cnt/$total_cnt] testing $input_file and $answer_file (${time}s): "
+  echo -n "(${time}s) "
   if [[ $ret == 124 ]] && [[ $ret > $time_limit ]]
   then
-    echo "$(tput setaf 3)TLE$(tput sgr0)"
+    echo ": $(tput setaf 3)TLE$(tput sgr0)"
     continue
   fi
   if [[ $ret != 0 ]]
   then
-    echo "$(tput setaf 5)RE$(tput sgr0)"
+    echo ": $(tput setaf 5)RE$(tput sgr0)"
     continue
   fi
   diff -Z $answer_file $tmp_file > /dev/null
   if [[ $? != 0 ]]
   then
-    echo "$(tput setaf 1)WA$(tput sgr0)"
+    echo ": $(tput setaf 1)WA$(tput sgr0)"
     continue
   fi
 
-  echo "$(tput setaf 2)AC$(tput sgr0)"
+  echo ": $(tput setaf 2)AC$(tput sgr0)"
 done
