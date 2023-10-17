@@ -46,7 +46,7 @@ do
   ret=$?
   cnt=$((cnt+1))
   echo -n "[$cnt/$total_cnt] testing $input_file and $answer_file (${time}s): "
-  if [[ $ret == 124 ]] && [[ $(echo "$time > $time_limit" | bc) == 1 ]]
+  if [[ $ret == 124 ]] && [[ $ret > $time_limit ]]
   then
     echo "$(tput setaf 3)TLE$(tput sgr0)"
     continue
