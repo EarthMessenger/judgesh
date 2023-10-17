@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#!/usr/bin/bash
 
 print_usage_and_exit()
 {
@@ -22,7 +22,7 @@ done
 
 program=${@:$OPTIND:1}
 
-[ ! $program ] && print_usage_and_exit 
+[[ ! $program ]] && print_usage_and_exit 
 
 tmp_file=$(mktemp)
 
@@ -46,18 +46,18 @@ do
   ret=$?
   cnt=$((cnt+1))
   echo -n "[$cnt/$total_cnt] testing $input_file and $answer_file (${time}s): "
-  if [ $ret -eq 124 ] && [ $(echo "$time > $time_limit" | bc) -eq 1 ]
+  if [[ $ret == 124 ]] && [[ $(echo "$time > $time_limit" | bc) == 1 ]]
   then
     echo "$(tput setaf 3)TLE$(tput sgr0)"
     continue
   fi
-  if [ $ret -ne 0 ]
+  if [[ $ret != 0 ]]
   then
     echo "$(tput setaf 5)RE$(tput sgr0)"
     continue
   fi
   diff -Z $answer_file $tmp_file > /dev/null
-  if [ $? -ne 0 ]
+  if [[ $? != 0 ]]
   then
     echo "$(tput setaf 1)WA$(tput sgr0)"
     continue
