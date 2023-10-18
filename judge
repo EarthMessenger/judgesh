@@ -52,7 +52,7 @@ do
     echo ": $(tput setaf 7)answer file not found, skipped$(tput sgr0)"
     continue
   fi
-  time=$( TIMEFORMAT="%R"; { time ( timeout $time_limit ./$program < $input_file > $tmp_file ) } 2>&1 )
+  time=$( TIMEFORMAT="%R"; { time ( timeout $time_limit $SHELL -c "{ ./$program < $input_file > $tmp_file; } 2> /dev/null"); } 2>&1 )
   ret=$?
   echo -n "(${time}s) "
   if [[ $ret == 124 ]] && [[ $time > $time_limit ]]

@@ -15,4 +15,5 @@ int main()
     while (true) ;
   }
   std::cout << a + b << std::endl;
+  std::cerr << "Hello from stderr" << std::endl;
 }
