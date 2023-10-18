@@ -2,13 +2,13 @@
 
 print_usage_and_exit()
 {
-  echo "Usage: $(basename $0) [-t <second>] <program>"
+  echo "Usage: $(basename "$0") [-t <second>] <program>"
   exit 1
 }
 
 check_exist()
 {
-  if ! command -v ${1} &> /dev/null
+  if ! command -v "${1}" &> /dev/null
   then
     echo "${1} couldn't be found"
     exit 1
@@ -29,16 +29,16 @@ do
     t)
       time_limit=$OPTARG
       ;;
-    ?)
+    :)
       print_usage_and_exit
       ;;
-    :)
+    ?)
       print_usage_and_exit
       ;;
   esac
 done
 
-program=${@:$OPTIND:1}
+program=${*:$OPTIND:1}
 
 [[ ! $program ]] && print_usage_and_exit 
 
@@ -52,8 +52,8 @@ clean()
 
 trap clean EXIT
 
-testcases=$(ls ${program}*.in | sed "s/.in$//")
-total_cnt=$(echo $testcases | wc -w)
+testcases=$(printf "%s\n" "$program"*.in | sed "s/.in$//")
+total_cnt=$(echo "$testcases" | wc -w)
 cnt=0
 
 for t in $testcases
@@ -69,14 +69,14 @@ do
     continue
   fi
 
-  resource_usage=$(\time -q -f "%e\t%M" $SHELL -c "timeout $time_limit $SHELL -c \"{ ./$program < $input_file > $tmp_file; } 2> /dev/null\"" 2>&1)
+  resource_usage=$(command time -q -f "%e\t%M" "$SHELL" -c "timeout $time_limit $SHELL -c \"{ ./$program < $input_file > $tmp_file; } 2> /dev/null\"" 2>&1)
   ret=$?
 
   time=$(echo "$resource_usage" | cut -f1)
   mem=$(echo "$resource_usage" | cut -f2)
   echo -n "(${time}s ${mem}KB) "
 
-  if [[ $ret == 124 ]] && [[ $time > $time_limit ]]
+  if [[ $ret == 124 ]] && [[ $(echo "$time > $time_limit" | bc) == 0 ]]
   then
     echo ": $(tput setaf 3)TLE$(tput sgr0)"
     continue
@@ -88,9 +88,7 @@ do
     continue
   fi
 
-  diff -Z $answer_file $tmp_file > /dev/null
-
-  if [[ $? != 0 ]]
+  if ! diff -Z "$answer_file" "$tmp_file" > /dev/null
   then
     echo ": $(tput setaf 1)WA$(tput sgr0)"
     continue
