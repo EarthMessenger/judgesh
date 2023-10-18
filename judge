@@ -8,27 +8,27 @@ print_usage_and_exit()
 
 check_exist()
 {
-  if ! command -v "${1}" &> /dev/null
+  if ! command -v "$1" &> /dev/null
   then
-    echo "${1} couldn't be found"
+    echo "$1 couldn't be found"
     exit 1
   fi
 }
 
-check_exist tput
-check_exist diff
-check_exist time
-check_exist wc
 check_exist cut
-check_exist bc
+check_exist diff
+check_exist find
+check_exist sort
+check_exist time
+check_exist tput
 
 time_limit=1
 
 while getopts "t:" opt
 do
-  case $opt in
+  case ${opt} in
     t)
-      time_limit=$OPTARG
+      time_limit=${OPTARG}
       ;;
     :)
       print_usage_and_exit
@@ -40,56 +40,65 @@ do
 done
 
 program=${*:$OPTIND:1}
+program_basename=$(basename "${program}")
 
-[[ ! $program ]] && print_usage_and_exit 
+[[ ! ${program} ]] && print_usage_and_exit
 
 tmp_file=$(mktemp)
 
 clean() 
 {
-  rm -f "$tmp_file"
+  rm -f "${tmp_file}"
   tput sgr0
 }
 
 trap clean EXIT
 
-testcases=$(printf "%s\n" "$program"*.in | sed "s/.in$//")
-total_cnt=$(echo "$testcases" | wc -w)
+testcases=()
+while read -r t
+do
+  testcases+=("${t}")
+done < <(find . -name "${program_basename}*.in" | sed "s/.in$//" | sort)
+total_cnt=${#testcases[@]}
 cnt=0
 
-for t in $testcases
+for ((i = 0; i < ${#testcases[@]}; i++))
 do
+  t="${testcases[i]}"
   input_file="${t}.in"
   answer_file="${t}.ans"
   cnt=$((cnt+1))
-  echo -n "[$cnt/$total_cnt] testing $input_file and $answer_file "
+  echo -n "[${cnt}/${total_cnt}] testing \`${input_file}' and \`${answer_file}' "
 
-  if [[ ! -f $answer_file ]]
+  if [[ ! -f ${answer_file} ]]
   then
     echo ": $(tput setaf 7)answer file not found, skipped$(tput sgr0)"
     continue
   fi
 
-  resource_usage=$(command time -q -f "%e\t%M" "$SHELL" -c "timeout $time_limit $SHELL -c \"{ ./$program < $input_file > $tmp_file; } 2> /dev/null\"" 2>&1)
+  timeout_cmd="{ ./\\\"${program}\\\" < \\\"${input_file}\\\" > \\\"${tmp_file}\\\"; } \
+    2> /dev/null"
+  resource_usage=$(command time -q -f "%e\t%M" "${SHELL}" -c \
+    "timeout \"${time_limit}\" \"${SHELL}\" -c \"${timeout_cmd}\"" 2>&1)
   ret=$?
 
-  time=$(echo "$resource_usage" | cut -f1)
-  mem=$(echo "$resource_usage" | cut -f2)
+  time=$(echo "${resource_usage}" | cut -f1)
+  mem=$(echo "${resource_usage}" | cut -f2)
   echo -n "(${time}s ${mem}KB) "
 
-  if [[ $ret == 124 ]] && [[ $(echo "$time > $time_limit" | bc) == 0 ]]
+  if [[ ${ret} == 124 ]]
   then
     echo ": $(tput setaf 3)TLE$(tput sgr0)"
     continue
   fi
 
-  if [[ $ret != 0 ]]
+  if [[ ${ret} != 0 ]]
   then
     echo ": $(tput setaf 5)RE$(tput sgr0)"
     continue
   fi
 
-  if ! diff -Z "$answer_file" "$tmp_file" > /dev/null
+  if ! diff -Z "${answer_file}" "${tmp_file}" > /dev/null
   then
     echo ": $(tput setaf 1)WA$(tput sgr0)"
     continue
