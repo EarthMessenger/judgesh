@@ -20,6 +20,7 @@ check_exist diff
 check_exist time
 check_exist wc
 check_exist cut
+check_exist bc
 
 time_limit=1
 
