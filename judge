@@ -6,6 +6,21 @@ print_usage_and_exit()
   exit 1
 }
 
+check_exist()
+{
+  if ! command -v ${1} &> /dev/null
+  then
+    echo "${1} couldn't be found"
+    exit 1
+  fi
+}
+
+check_exist tput
+check_exist diff
+check_exist time
+check_exist wc
+check_exist cut
+
 time_limit=1
 
 while getopts "t:" opt
@@ -47,25 +62,34 @@ do
   answer_file="${t}.ans"
   cnt=$((cnt+1))
   echo -n "[$cnt/$total_cnt] testing $input_file and $answer_file "
+
   if [[ ! -f $answer_file ]]
   then
     echo ": $(tput setaf 7)answer file not found, skipped$(tput sgr0)"
     continue
   fi
-  time=$( TIMEFORMAT="%R"; { time ( timeout $time_limit $SHELL -c "{ ./$program < $input_file > $tmp_file; } 2> /dev/null"); } 2>&1 )
+
+  resource_usage=$(\time -q -f "%e\t%M" $SHELL -c "timeout $time_limit $SHELL -c \"{ ./$program < $input_file > $tmp_file; } 2> /dev/null\"" 2>&1)
   ret=$?
-  echo -n "(${time}s) "
+
+  time=$(echo "$resource_usage" | cut -f1)
+  mem=$(echo "$resource_usage" | cut -f2)
+  echo -n "(${time}s ${mem}KB) "
+
   if [[ $ret == 124 ]] && [[ $time > $time_limit ]]
   then
     echo ": $(tput setaf 3)TLE$(tput sgr0)"
     continue
   fi
+
   if [[ $ret != 0 ]]
   then
     echo ": $(tput setaf 5)RE$(tput sgr0)"
     continue
   fi
+
   diff -Z $answer_file $tmp_file > /dev/null
+
   if [[ $? != 0 ]]
   then
     echo ": $(tput setaf 1)WA$(tput sgr0)"
