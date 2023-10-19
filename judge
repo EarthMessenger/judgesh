@@ -8,9 +8,9 @@ print_usage_and_exit()
 
 check_exist()
 {
-  if ! command -v "$1" &> /dev/null
+  if ! hash "$1" &> /dev/null
   then
-    echo "$1 couldn't be found"
+    echo "$1 couldn't be found" >&2
     exit 1
   fi
 }
