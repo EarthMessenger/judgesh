@@ -42,7 +42,13 @@ done
 program=${*:$OPTIND:1}
 program_basename=$(basename "${program}")
 
-[[ ! ${program} ]] && print_usage_and_exit
+[[ ! "${program}" ]] && print_usage_and_exit
+
+if [[ ! -x "${program}" ]]
+then
+  echo "Cannot execute the program. "
+  exit 1
+fi
 
 tmp_file=$(mktemp)
 
