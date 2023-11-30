@@ -2,7 +2,7 @@
 
 print_usage_and_exit()
 {
-  echo "Usage: $(basename "$0") [-t <second>] <program>"
+  echo "Usage: $(basename "$0") [-t <second>] [-c <checker>] <program>"
   exit 1
 }
 
@@ -18,17 +18,22 @@ check_exist()
 check_exist cut
 check_exist diff
 check_exist find
+check_exist realpath
 check_exist sort
 check_exist time
 check_exist tput
 
 time_limit=1
+checker=
 
-while getopts "t:" opt
+while getopts "t:c:" opt
 do
   case ${opt} in
     t)
       time_limit=${OPTARG}
+      ;;
+    c)
+      checker=$(realpath ${OPTARG})
       ;;
     :)
       print_usage_and_exit
@@ -47,6 +52,12 @@ program_basename=$(basename "${program}")
 if [[ ! -x "${program}" ]]
 then
   echo "Cannot execute the program. "
+  exit 1
+fi
+
+if [[ ! -z "${checker}" && ! -x "${checker}" ]]
+then
+  echo "Cannot execute the checker. "
   exit 1
 fi
 
@@ -105,10 +116,19 @@ do
     continue
   fi
 
-  if ! diff -Z "${answer_file}" "${tmp_file}" > /dev/null
+  if [[ -z "${checker}" ]]
   then
-    echo ": $(tput setaf 1)WA$(tput sgr0)"
-    continue
+    if ! diff -Z "${answer_file}" "${tmp_file}" > /dev/null 2>&1
+    then
+      echo ": $(tput setaf 1)WA$(tput sgr0)"
+      continue
+    fi
+  else
+    if ! "${checker}" "${input_file}" "${tmp_file}" "${answer_file}" > /dev/null 2>&1
+    then
+      echo ": $(tput setaf 1)WA$(tput sgr0)"
+      continue
+    fi
   fi
 
   ((ac_cnt++))
