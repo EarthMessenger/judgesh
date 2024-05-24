@@ -118,7 +118,7 @@ do
 
   if [[ -z "${checker}" ]]
   then
-    if ! diff -Z "${answer_file}" "${tmp_file}" > /dev/null 2>&1
+    if ! diff -ZB "${answer_file}" "${tmp_file}" > /dev/null 2>&1
     then
       echo ": $(tput setaf 1)WA$(tput sgr0)"
       continue
